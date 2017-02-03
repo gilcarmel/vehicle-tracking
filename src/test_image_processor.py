@@ -3,7 +3,9 @@ import glob
 import itertools
 
 import cv2
-import numpy
+import numpy as np
+
+from src import image_searcher
 
 
 def read_images(path):
@@ -22,20 +24,20 @@ def read_images(path):
 
 
 def request_reprocess():
-    global intermediate_images
-    intermediate_images = None
+    global detections_done
+    detections_done = False
 
 
 def update_param(param_key, trackbar_value):
-    param_def = lf.param_defs[param_key]
+    param_def = image_searcher.param_defs[param_key]
     # Convert from trackbar value (min 0, integer step) to actual value
-    lf.params[param_key] = trackbar_value * param_def.step + param_def.min_value
+    image_searcher.params[param_key] = trackbar_value * param_def.step + param_def.min_value
     request_reprocess()
 
 
 def create_slider(param_key, window_name):
-    param_def = lf.param_defs[param_key]
-    param_value = lf.params[param_key]
+    param_def = image_searcher.param_defs[param_key]
+    param_value = image_searcher.params[param_key]
     trackbar_max = actual_to_trackbar_value(param_def, param_def.max_value)
     cv2.createTrackbar(
         param_def.description,
@@ -73,6 +75,18 @@ def actual_to_trackbar_value(param_def, value):
     return int((value - param_def.min_value) / param_def.step)
 
 
+# Define a function to draw bounding boxes
+def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
+    # Make a copy of the image
+    imcopy = np.copy(img)
+    # Iterate through the bounding boxes
+    for bbox in bboxes:
+        # Draw a rectangle given bbox coordinates
+        cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
+    # Return the image copy with boxes drawn
+    return imcopy
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process some test jpgs in an interactive UI')
@@ -84,13 +98,19 @@ if __name__ == "__main__":
     image_cycle = itertools.cycle(images)
 
     filename, image = next(image_cycle)
-    intermediate_images = None
+    detections_done = False
 
     # Main loop
     while True:
-        if not intermediate_images:
+        if not detections_done:
             # display_image("Original", image)
-            display_image("Original", image)
+            boxes, car_boxes = image_searcher.get_hot_windows(image)
+            image_with_boxes = draw_boxes(image, boxes)
+            image_with_cars = draw_boxes(image, car_boxes)
+
+            display_image("All boxes", image_with_boxes, image_searcher.WINDOW_DIM, image_searcher.WINDOW_OVERLAP)
+            display_image("Cars", image_with_cars)
+            detections_done = True
 
         key = cv2.waitKey(33)
         if key == ord('q'):
@@ -99,4 +119,4 @@ if __name__ == "__main__":
         elif key == ord('n'):
             # next image
             filename, image = next(image_cycle)
-            intermediate_images = None
+            detections_done = False
