@@ -31,7 +31,14 @@ def request_reprocess():
 def update_param(param_key, trackbar_value):
     param_def = image_searcher.param_defs[param_key]
     # Convert from trackbar value (min 0, integer step) to actual value
-    image_searcher.params[param_key] = trackbar_value * param_def.step + param_def.min_value
+    value = trackbar_value * param_def.step + param_def.min_value
+    if param_key == image_searcher.ACTIVE_TIER:
+        # Selecting the active tier is a little special because we
+        # need to save/load tunable values
+        image_searcher.set_active_tier(value)
+    else:
+        image_searcher.params[param_key] = value
+
     request_reprocess()
 
 
@@ -39,12 +46,17 @@ def create_slider(param_key, window_name):
     param_def = image_searcher.param_defs[param_key]
     param_value = image_searcher.params[param_key]
     trackbar_max = actual_to_trackbar_value(param_def, param_def.max_value)
+    trackbar_value = actual_to_trackbar_value(param_def, param_value)
     cv2.createTrackbar(
         param_def.description,
         window_name,
-        actual_to_trackbar_value(param_def, param_value),
+        trackbar_value,
         trackbar_max,
         lambda param, k=None, state=None: update_param(param_key, param))
+    # set the value again (value above gets ignored if trackbar already existed)
+    cv2.setTrackbarPos(param_def.description,
+                       window_name,
+                       trackbar_value)
 
 
 def to_bgr_if_necessary(img):
@@ -75,18 +87,6 @@ def actual_to_trackbar_value(param_def, value):
     return int((value - param_def.min_value) / param_def.step)
 
 
-# Define a function to draw bounding boxes
-def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
-    # Make a copy of the image
-    imcopy = np.copy(img)
-    # Iterate through the bounding boxes
-    for bbox in bboxes:
-        # Draw a rectangle given bbox coordinates
-        cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
-    # Return the image copy with boxes drawn
-    return imcopy
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process some test jpgs in an interactive UI')
@@ -105,11 +105,15 @@ if __name__ == "__main__":
         if not detections_done:
             # display_image("Original", image)
             boxes, car_boxes = image_searcher.get_hot_windows(image)
-            image_with_boxes = draw_boxes(image, boxes)
-            image_with_cars = draw_boxes(image, car_boxes)
+            image_with_boxes = image_searcher.draw_boxes(image, boxes)
+            image_with_cars = image_searcher.draw_boxes(image, car_boxes)
+            heatmap = image_searcher.make_heatmap_like(image)
+            image_searcher.add_heat(heatmap, car_boxes)
+            image_searcher.normalize_heatmap(heatmap)
 
-            display_image("All boxes", image_with_boxes, image_searcher.WINDOW_DIM, image_searcher.WINDOW_OVERLAP)
+            display_image("All boxes", image_with_boxes, image_searcher.ACTIVE_TIER, image_searcher.WINDOW_DIM, image_searcher.WINDOW_OVERLAP)
             display_image("Cars", image_with_cars)
+            display_image("Heatmap", heatmap)
             detections_done = True
 
         key = cv2.waitKey(33)

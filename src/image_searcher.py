@@ -3,14 +3,31 @@ Searches for car bounding boxes in an entire image
 """
 import cv2
 import numpy as np
+import matplotlib.image as mpimg
 
 from src import classifier
 from src.classifier import single_img_features
 
 
+class SearchWindowTier(object):
+    def __init__(self, min_y, max_y, size, overlap):
+        self.min_y = min_y
+        self.max_y = max_y
+        self.size = size
+        self.overlap = overlap
+        pass
+
+
+search_window_tiers = [
+    # SearchWindowTier(350, 550, 85, 0.60),
+    SearchWindowTier(350, 550, 130, 0.82),
+    SearchWindowTier(350, 720, 170, 0.75)
+]
+
 # KEYS into paramter dictionaries
 WINDOW_DIM = 'WINDOW_DIM'
 WINDOW_OVERLAP = 'WINDOW_OVERLAP'
+ACTIVE_TIER = 'ACTIVE_TIER'
 
 
 # Definition of a pipeline parameter
@@ -25,18 +42,19 @@ class ParamDef(object):
 
 # Definition of all parameters in our pipeline
 param_defs = {
-    WINDOW_DIM: ParamDef(50, 200, 5, "window size"),
-    WINDOW_OVERLAP: ParamDef(0, 1, 0.01, "window overlap"),
+                 WINDOW_DIM: ParamDef(50, 200, 5, "window size"),
+                 WINDOW_OVERLAP: ParamDef(0, 1, 0.01, "window overlap"),
+                 ACTIVE_TIER: ParamDef(0, len(search_window_tiers), 1, "current tier"),
 }
 
 # Parameters to use for various steps of the pipeline
 params = {
     WINDOW_DIM: 150,
     WINDOW_OVERLAP: 0.75,
+    ACTIVE_TIER: len(search_window_tiers),
 }
 
-
-y_start_stop = [350, 720]  # Min and max in y to search in slide_window()
+# y_start_stop = [350, 720]  # Min and max in y to search in slide_window()
 
 
 # Define a function you will pass an image
@@ -101,13 +119,72 @@ def slide_window(img, x_start_stop=(None, None), y_start_stop=(None, None),
 
 
 def get_hot_windows(image):
-    dim = params[WINDOW_DIM]
-    overlap = params[WINDOW_OVERLAP]
-    windows = slide_window(
-        image,
-        x_start_stop=[None, None],
-        y_start_stop=y_start_stop,
-        xy_window=(dim, dim),
-        xy_overlap=(overlap, overlap))
+    active_tier = params[ACTIVE_TIER]
+    # If a single tier is selected in the interactive UI, only search that one
+    # and use the tuning values
+    if active_tier != len(search_window_tiers):
+        tier = search_window_tiers[active_tier]
+        windows = slide_window(
+            image,
+            x_start_stop=[None, None],
+            y_start_stop=(tier.min_y, tier.max_y),
+            xy_window=(params[WINDOW_DIM], params[WINDOW_DIM]),
+            xy_overlap=(params[WINDOW_OVERLAP], tier.overlap))
+    # Otherwise search all tiers
+    else:
+        windows = []
+        for tier in search_window_tiers:
+            tier_windows = slide_window(
+                image,
+                x_start_stop=[None, None],
+                y_start_stop=(tier.min_y, tier.max_y),
+                xy_window=(tier.size, tier.size),
+                xy_overlap=(tier.overlap, tier.overlap))
+            windows.extend(tier_windows)
 
     return windows, search_windows(image, windows)
+
+
+# Define a function to draw bounding boxes
+def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
+    # Make a copy of the image
+    imcopy = np.copy(img)
+    # Iterate through the bounding boxes
+    for bbox in bboxes:
+        # Draw a rectangle given bbox coordinates
+        cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
+    # Return the image copy with boxes drawn
+    return imcopy
+
+def make_heatmap_like(img):
+    return np.zeros_like(img[:, :, 0]).astype(np.float)
+
+def add_heat(heatmap, bbox_list):
+    # Iterate through list of bboxes
+    for box in bbox_list:
+        # Add += 1 for all pixels inside each bbox
+        heatmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
+
+    # Return updated heatmap
+    return heatmap
+
+def normalize_heatmap(heatmap):
+    heatmap /= np.max(np.abs(heatmap))
+
+def set_active_tier(tier_num):
+    prev_tier_num = params[ACTIVE_TIER]
+    if prev_tier_num == tier_num:
+        return
+
+    params[ACTIVE_TIER] = tier_num
+    # Persist tunable params for previously active tier
+    if prev_tier_num != len(search_window_tiers):
+        prev_tier = search_window_tiers[prev_tier_num]
+        prev_tier.overlap = params[WINDOW_OVERLAP]
+        prev_tier.size = params[WINDOW_DIM]
+    # Load tunable params for next tier
+    if tier_num != len(search_window_tiers):
+        tier = search_window_tiers[tier_num]
+        params[WINDOW_OVERLAP] = tier.overlap
+        params[WINDOW_DIM] = tier.size
+

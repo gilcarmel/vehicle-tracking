@@ -1,5 +1,7 @@
 """
 Trains, saves and loads a classifier to determine whether an image shows a vehicle
+This code is a modified version of the code from the vehicle tracking lesson of
+Udacity's self-driving car engineer nanodegree program.
 """
 
 import glob
