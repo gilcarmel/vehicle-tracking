@@ -36,7 +36,7 @@ def create_heatmap(img):
 
 def create_labels(heatmap):
     # apply threshold
-    threshold = 15
+    threshold = 30
     thresh_heatmap = np.copy(heatmap)
     thresh_heatmap[thresh_heatmap <= threshold] = 0
     return label(thresh_heatmap)
