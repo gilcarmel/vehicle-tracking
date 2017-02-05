@@ -6,6 +6,7 @@ Udacity's self-driving car engineer nanodegree program.
 
 import glob
 import pickle
+import random
 import time
 
 import matplotlib.image as mpimg
@@ -23,13 +24,13 @@ scaler = None
 # TODO: Tweak these parameters and see how the results change.
 feature_extraction_params = {
     'color_space': 'HSV',  # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-    'orient': 12,  # HOG orientations
+    'orient': 9,  # HOG orientations
     'pix_per_cell': 8,  # HOG pixels per cell
     'cell_per_block': 2,  # HOG cells per block
     'hog_channel': -1,  # Can be 0, 1, 2, or -1
     'spatial_size': (16, 16),  # Spatial binning dimensions
     'hist_bins': 16,  # Number of histogram bins
-    'spatial_feat': False,  # Spatial features on or off
+    'spatial_feat': True,  # Spatial features on or off
     'hist_feat': True,  # Histogram features on or off
     'hog_feat': True  # HOG features on or off
 }
@@ -147,20 +148,29 @@ def train():
     # You can get training data from these two links:
     # https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip
     # https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip
-    cars = glob.glob('training_data/vehicles/**/*.png')
+    # cars = glob.glob('training_data/vehicles/**/*.png')
+    # not_cars = glob.glob('training_data/non-vehicles/**/*.png')
+    # cars = glob.glob('training_data/udacity/formatted_cars/*.png')
+    # not_cars = glob.glob('training_data/udacity/non_cars/*.png')
+    cars = glob.glob('training_data/vehicles/GTI*/*.png')
     not_cars = glob.glob('training_data/non-vehicles/**/*.png')
 
     # Reduce sample size during initial development
     sample_size = None
 
+    random.shuffle(cars)
+    random.shuffle(not_cars)
     cars = cars[:sample_size]
-    not_cars = not_cars[:sample_size]
+    not_cars = not_cars[:len(cars)]
 
+    print("Extracting features for {} cars".format(len(cars)))
     car_features = extract_features(cars)
+    print("Extracting features for {} non-cars".format(len(not_cars)))
     notcar_features = extract_features(not_cars)
 
     X = np.vstack((car_features, notcar_features)).astype(np.float64)
     # Fit a per-column scaler
+    print("fitting...")
     scaler = StandardScaler().fit(X)
     # Apply the scaler to X
     scaled_X = scaler.transform(X)

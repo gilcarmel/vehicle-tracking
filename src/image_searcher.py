@@ -21,9 +21,9 @@ class SearchWindowTier(object):
 
 
 search_window_tiers = [
-    SearchWindowTier(350, 450, 300, 1000, 85, 0.50),
-    SearchWindowTier(400, 500, 200, 1100, 130, 0.63),
-    SearchWindowTier(400, 720, None, None, 250, 0.5)
+    SearchWindowTier(350, 450, 100, 1200, 85, 0.71),
+    SearchWindowTier(400, 500, 200, 1100, 130, 0.75),
+    # SearchWindowTier(400, 720, None, None, 250, 0.5)
 ]
 
 # KEYS into paramter dictionaries
