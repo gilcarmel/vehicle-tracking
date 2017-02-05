@@ -10,7 +10,9 @@ from src.classifier import single_img_features
 
 
 class SearchWindowTier(object):
-    def __init__(self, min_y, max_y, size, overlap):
+    def __init__(self, min_y, max_y, min_x, max_x, size, overlap):
+        self.min_x = min_x
+        self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
         self.size = size
@@ -19,9 +21,9 @@ class SearchWindowTier(object):
 
 
 search_window_tiers = [
-    SearchWindowTier(350, 550, 85, 0.50),
-    SearchWindowTier(350, 550, 130, 0.63),
-    SearchWindowTier(400, 720, 250, 0.5)
+    SearchWindowTier(350, 450, 300, 1000, 85, 0.50),
+    SearchWindowTier(400, 500, 200, 1100, 130, 0.63),
+    SearchWindowTier(400, 720, None, None, 250, 0.5)
 ]
 
 # KEYS into paramter dictionaries
@@ -100,17 +102,17 @@ def get_hot_windows(image):
         tier = search_window_tiers[active_tier]
         windows = slide_window(
             image,
-            x_start_stop=[None, None],
+            x_start_stop=(tier.min_x, tier.max_x),
             y_start_stop=(tier.min_y, tier.max_y),
             xy_window=(params[WINDOW_DIM], params[WINDOW_DIM]),
-            xy_overlap=(params[WINDOW_OVERLAP], tier.overlap))
+            xy_overlap=(params[WINDOW_OVERLAP], params[WINDOW_OVERLAP]))
     # Otherwise search all tiers
     else:
         windows = []
         for tier in search_window_tiers:
             tier_windows = slide_window(
                 image,
-                x_start_stop=[None, None],
+                x_start_stop=(tier.min_x, tier.max_x),
                 y_start_stop=(tier.min_y, tier.max_y),
                 xy_window=(tier.size, tier.size),
                 xy_overlap=(tier.overlap, tier.overlap))
