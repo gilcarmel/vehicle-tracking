@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import cv2
 import imageio
@@ -15,7 +16,7 @@ import src.image_searcher as image_searcher
 # from matplotlib.figure import Figure
 
 # Use a rolling window of frames to increase confidence in car detections
-SMOOTHING_WINDOW = 10
+SMOOTHING_WINDOW = 20
 
 
 def create_heatmap(img):
@@ -26,17 +27,19 @@ def create_heatmap(img):
     heatmap = image_searcher.make_heatmap_like(img)
 
     # add bboxes
-    for bbox_list in hot_windows_history[-SMOOTHING_WINDOW:]:
+    start_index = max(0, frame_number+1-SMOOTHING_WINDOW)
+    for bbox_list in hot_windows_history[start_index:frame_number+1]:
         image_searcher.add_heat(heatmap, bbox_list)
 
-    # apply threshold
-    threshold = 15
-    heatmap[heatmap <= threshold] = 0
 
     return heatmap
 
 def create_labels(heatmap):
-    label_img = label(heatmap)
+    # apply threshold
+    threshold = 15
+    thresh_heatmap = np.copy(heatmap)
+    thresh_heatmap[thresh_heatmap <= threshold] = 0
+    return label(thresh_heatmap)
 
 
 def get_label_bboxes(labels):
@@ -66,9 +69,22 @@ def generate_output_frame(img):
     noramlized_img = np.float32(img * (1.0 / 255.0))   # pipeline is trained on RGB values (0....1)
     _, hot_windows = image_searcher.get_hot_windows(noramlized_img)
     hot_windows_history.append(hot_windows)
-    single_image_boxes = image_searcher.draw_boxes(img, hot_windows)
+    return generate_output_frame_with_history(img)
+
+
+def generate_output_frame_with_history(img):
+    """
+    Perform lane detection on one frame of input video
+    :param img: input frame
+    :return: output frame with lane overlay + info
+    """
+    global frame_number
+    global basename
+    global hot_windows_history
+
+    single_image_boxes = image_searcher.draw_boxes(img, hot_windows_history[frame_number])
     heatmap = create_heatmap(img)
-    labels = label(heatmap)
+    labels = create_labels(heatmap)
     label_bboxes = get_label_bboxes(labels)
     image_with_labels = image_searcher.draw_boxes(img, label_bboxes)
 
@@ -84,6 +100,20 @@ def generate_output_frame(img):
     return image_with_labels
 
 
+HISTORY_PATH = "bbox_history.pickle"
+
+
+def load_history():
+    if not os.path.exists(HISTORY_PATH):
+        return []
+    with open(HISTORY_PATH, 'rb') as f:
+        return pickle.load(f)
+
+
+def save_history():
+    with open(HISTORY_PATH, 'wb') as f:
+        return pickle.dump(hot_windows_history, f)
+
 if __name__ == "__main__":
     basename = "project_video"
     intermediate_file_out_path = 'intermediate/' + basename
@@ -92,7 +122,11 @@ if __name__ == "__main__":
     clip = VideoFileClip(basename + ".mp4")
     output_name = basename + "_out.mp4"
     frame_number = 0
-    hot_windows_history = []
-    # output_clip = clip.subclip(10.0,12.0).fl_image(generate_output_frame)
-    output_clip = clip.fl_image(generate_output_frame)
+    hot_windows_history = load_history()
+    # clip = clip.subclip(10.0,11.0)
+    if len(hot_windows_history):
+        output_clip = clip.fl_image(generate_output_frame_with_history)
+    else:
+        output_clip = clip.fl_image(generate_output_frame)
     output_clip.write_videofile(output_name, audio=False)
+    save_history()
