@@ -40,9 +40,17 @@ are most similar to the project video.
 I search the lower half of the image using three different window sizes. I created a small interactive UI to cycle
 through my test images and tweak the parameters (window size, overlap) for each tier.
 
+Overlapping search windows:
+
+![OUTPUT](output_images/sliding_window.png)
+
+Detected car bounding boxes:
+
+![OUTPUT](output_images/detected_cars.png)
+
 The source code can be found here:
 * image_searcher.py - Search through a large image and return the search windows where a car was found
-* test_image_processor.py - interactive UI for searching through images
+* test_image_processor.py - interactive UI for searching through a set of test images and tweaking the search parameters
 
 TODO: example images
 ---
