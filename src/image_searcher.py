@@ -21,8 +21,8 @@ class SearchWindowTier(object):
 
 
 search_window_tiers = [
-    SearchWindowTier(350, 450, 100, 1200, 85, 0.71),
-    SearchWindowTier(400, 500, 200, 1100, 130, 0.75),
+    # SearchWindowTier(350, 450, 100, 1200, 85, 0.73),
+    SearchWindowTier(350, 500, 100, None, 80, 0.79),
     # SearchWindowTier(400, 720, None, None, 250, 0.5)
 ]
 
