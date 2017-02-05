@@ -52,7 +52,7 @@ The source code can be found here:
 * image_searcher.py - Search through a large image and return the search windows where a car was found
 * test_image_processor.py - interactive UI for searching through a set of test images and tweaking the search parameters
 
-TODO: example images
+
 ---
 
 ### Video Implementation
@@ -67,8 +67,11 @@ Video processing works as follows:
 * scipy.ndimage.measurements.label() to label contiguous blobs in the heatmap
 * Assume each blob is a car, and calculate its bounding box
 
-
-TODO: images
+| <img src="./output_images/0400_00_orig.jpg" width="250"/>        | <img src="./output_images/0400_01_bboxes.jpg" width="250"/>        | <img src="./output_images/0400_02_heatmap.jpg" width="250"/> 
+|:-------------:|:-------------:|:-------------:|
+| 1. Input image     | 2. Single-image detection | Heatmap of previous 20 frames' detection |
+|<img src="./output_images/0400_03_labels.jpg" width="250"/>       | <img src="./output_images/0400_04_result.jpg" width="250"/>        |  
+| 4. Labeled thresholded heatmap   | 5. Annotated image |
 
 
 ---
