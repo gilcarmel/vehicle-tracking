@@ -1,6 +1,6 @@
 **Vehicle Detection Project**
 
-This code tracks vehicles in a video stream. Given an a video recorded from a car's front-facing camera, it produces an output video with labels around the detected vehicles. I wrote it as part of Udacity's Self-Driving Car Engineer nanodegree program.
+This code tracks vehicles in a video stream. Given a video recorded from a car's front-facing camera, it produces an output video with labels around the detected vehicles. I wrote it as part of Udacity's Self-Driving Car Engineer nanodegree program.
 
 The goals / steps of this project are as follows:
 
@@ -11,8 +11,6 @@ The goals / steps of this project are as follows:
 
 
 ---
-###Writeup / README
-
 
 ### The Classifier
 
@@ -23,21 +21,21 @@ The code for this step is in classifier.py:
 * extract_features() extracts all features from an image, using color_hist(), bin_spatial(), and get_hog_features()
 * is_car() uses the trained SVM to infer whether a 64x64 image contains a car
 
-The feature extraction code is identical for both training and inference. Since my initial stab achieved over 98% test accuracy,
+The feature extraction code is identical for both training and inference. Since my initial stab achieved 98% test accuracy,
 I didn't experiment too much with extraction parameters for either HOG or color features:
 * HOG on all HSV channels, 8x8 cells, 2x2 blocks
 * Spatial binning of HSV to 16x16 squares
 * Histogram of HSV to 16 bins
 
-As usual, the choice of data had a major impact on detection quality. After initially getting middling results  , I tried
+As usual, the choice of data had a major impact on detection quality. After initially getting middling results , I tried
 training the classifier with much more data extracted from Udacity's open source repository, but I found that accuracy
 decreased because the data is so diverse, it was hard to tune a classifier that generalized well. I then tried the
 opposite approach - limiting the training data to only GTI data (excluding KITTI), after noticing that the GTI examples
-are most similar to the project video.
+are most similar to the project video. In this very restricted scenario, training data that is more homogenous proved better for the task.
 
 ###Sliding Window Search
 
-I search the lower half of the image using three different window sizes. I created a small interactive UI to cycle
+I search the lower half of the image using two different window sizes. I created a small interactive UI to cycle
 through my test images and tweak the parameters (window size, overlap) for each tier.
 
 Overlapping search windows:
@@ -57,7 +55,7 @@ The source code can be found here:
 
 ### Video Implementation
 
-TODO: video output
+[The output video can be found here](./project_video_out.mp4)
 
 
 Video processing works as follows:
