@@ -144,6 +144,9 @@ def single_img_features(image, color_space='RGB', spatial_size=(32, 32),
 def train():
     global svc, scaler
     # Divide up into cars and notcars
+    # You can get training data from these two links:
+    # https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/vehicles.zip
+    # https://s3.amazonaws.com/udacity-sdc/Vehicle_Tracking/non-vehicles.zip
     cars = glob.glob('training_data/vehicles/**/*.png')
     not_cars = glob.glob('training_data/non-vehicles/**/*.png')
 

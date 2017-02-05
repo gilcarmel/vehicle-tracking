@@ -19,9 +19,9 @@ class SearchWindowTier(object):
 
 
 search_window_tiers = [
-    # SearchWindowTier(350, 550, 85, 0.60),
-    SearchWindowTier(350, 550, 130, 0.82),
-    SearchWindowTier(350, 720, 170, 0.75)
+    SearchWindowTier(350, 550, 85, 0.50),
+    SearchWindowTier(350, 550, 130, 0.63),
+    SearchWindowTier(400, 720, 250, 0.5)
 ]
 
 # KEYS into paramter dictionaries
@@ -42,7 +42,7 @@ class ParamDef(object):
 
 # Definition of all parameters in our pipeline
 param_defs = {
-                 WINDOW_DIM: ParamDef(50, 200, 5, "window size"),
+                 WINDOW_DIM: ParamDef(50, 300, 5, "window size"),
                  WINDOW_OVERLAP: ParamDef(0, 1, 0.01, "window overlap"),
                  ACTIVE_TIER: ParamDef(0, len(search_window_tiers), 1, "current tier"),
 }
@@ -73,50 +73,24 @@ def search_windows(img, windows):
     # 8) Return windows for positive detections
     return on_windows
 
-
 # Define a function that takes an image,
 # start and stop positions in both x and y,
 # window size (x and y dimensions),
 # and overlap fraction (for both x and y)
 def slide_window(img, x_start_stop=(None, None), y_start_stop=(None, None),
-                 xy_window=(64, 64), xy_overlap=(0.5, 0.5)):
-    # If x and/or y start/stop positions not defined, set to image size
-    if x_start_stop[0] is None:
-        x_start_stop[0] = 0
-    if x_start_stop[1] is None:
-        x_start_stop[1] = img.shape[1]
-    if y_start_stop[0] is None:
-        y_start_stop[0] = 0
-    if y_start_stop[1] is None:
-        y_start_stop[1] = img.shape[0]
-    # Compute the span of the region to be searched
-    xspan = x_start_stop[1] - x_start_stop[0]
-    yspan = y_start_stop[1] - y_start_stop[0]
-    # Compute the number of pixels per step in x/y
-    nx_pix_per_step = np.int(xy_window[0] * (1 - xy_overlap[0]))
-    ny_pix_per_step = np.int(xy_window[1] * (1 - xy_overlap[1]))
-    # Compute the number of windows in x/y
-    nx_windows = np.int(xspan / nx_pix_per_step) - 1
-    ny_windows = np.int(yspan / ny_pix_per_step) - 1
+                    xy_window=(64, 64), xy_overlap=(0.5, 0.5)):
     # Initialize a list to append window positions to
     window_list = []
     # Loop through finding x and y window positions
-    # Note: you could vectorize this step, but in practice
-    # you'll be considering windows one by one with your
-    # classifier, so looping makes sense
-    for ys in range(ny_windows):
-        for xs in range(nx_windows):
-            # Calculate window position
-            startx = xs * nx_pix_per_step + x_start_stop[0]
-            endx = startx + xy_window[0]
-            starty = ys * ny_pix_per_step + y_start_stop[0]
-            endy = starty + xy_window[1]
-
-            # Append window position to list
-            window_list.append(((startx, starty), (endx, endy)))
+    w, h = img.shape[1::-1]
+    xstep = int(xy_window[0]*(1-xy_overlap[0]))
+    ystep = int(xy_window[1]*(1-xy_overlap[1]))
+    for x in np.arange(0,w-int(xy_window[0]))[x_start_stop[0]:x_start_stop[1]:xstep]:
+        for y in np.arange(0,h-int(xy_window[1]))[y_start_stop[0]:y_start_stop[1]:ystep]:
+            window = ((x,y),(x+xy_window[0],y+xy_window[1]))
+            window_list.append(window)
     # Return the list of windows
     return window_list
-
 
 def get_hot_windows(image):
     active_tier = params[ACTIVE_TIER]

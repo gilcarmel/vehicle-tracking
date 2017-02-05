@@ -18,6 +18,7 @@ def read_images(path):
     for fname in fnames:
         # Convert to RGB (pipline handles RGB to streamline video processing)
         rgb_image = cv2.cvtColor(cv2.imread(fname), cv2.COLOR_BGR2RGB)
+        rgb_image = np.float32(rgb_image * (1.0/255.0))
         imgs.append(rgb_image)
     print("Read {} images.".format(len(imgs)))
     return zip(fnames, imgs)
@@ -123,4 +124,5 @@ if __name__ == "__main__":
         elif key == ord('n'):
             # next image
             filename, image = next(image_cycle)
+            print(filename)
             detections_done = False

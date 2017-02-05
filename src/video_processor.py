@@ -30,7 +30,7 @@ def create_heatmap(img):
         image_searcher.add_heat(heatmap, bbox_list)
 
     # apply threshold
-    threshold = 5
+    threshold = 15
     heatmap[heatmap <= threshold] = 0
 
     return heatmap
@@ -52,6 +52,7 @@ def get_label_bboxes(labels):
         bboxes.append(bbox)
     return bboxes
 
+
 def generate_output_frame(img):
     """
     Perform lane detection on one frame of input video
@@ -62,7 +63,8 @@ def generate_output_frame(img):
     global basename
     global hot_windows_history
 
-    _, hot_windows = image_searcher.get_hot_windows(img)
+    noramlized_img = np.float32(img * (1.0 / 255.0))   # pipeline is trained on RGB values (0....1)
+    _, hot_windows = image_searcher.get_hot_windows(noramlized_img)
     hot_windows_history.append(hot_windows)
     single_image_boxes = image_searcher.draw_boxes(img, hot_windows)
     heatmap = create_heatmap(img)
